@@ -1,0 +1,169 @@
+/* Variables spécifiques au cube */
+:root {
+  --cube-size: 250px;
+  --edge-thickness: 2px;
+  --transition-duration: 0.5s;
+}
+
+@media (max-width: 600px) {
+  :root { 
+    --cube-size: 200px; 
+  }
+}
+
+/* Styles du cube et du conteneur principal */
+.cube-wrapper {
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  perspective: 3000px;
+}
+
+.cube-container {
+  width: var(--cube-size);
+  height: var(--cube-size);
+  position: relative;
+  transform-style: preserve-3d;
+  transform-origin: center center;
+  transition: transform var(--transition-duration) ease;
+  cursor: grab;
+}
+
+.cube-face {
+  position: absolute;
+  width: var(--cube-size);
+  height: var(--cube-size);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: transparent;
+  pointer-events: none;
+  backface-visibility: visible;
+  transform-origin: center center;
+  transition: all var(--transition-duration) ease;
+  border: var(--edge-thickness) solid hsl(var(--border));
+}
+
+/* Positionnement des faces */
+.face-front  { transform: translateZ(calc(var(--cube-size) / 2)); }
+.face-back   { transform: rotateY(180deg) translateZ(calc(var(--cube-size) / 2)); }
+.face-right  { transform: rotateY(90deg) translateZ(calc(var(--cube-size) / 2)); }
+.face-left   { transform: rotateY(-90deg) translateZ(calc(var(--cube-size) / 2)); }
+.face-top    { transform: rotateX(90deg) translateZ(calc(var(--cube-size) / 2)); }
+.face-bottom { transform: rotateX(-90deg) translateZ(calc(var(--cube-size) / 2)); }
+
+/* Styles des titres des faces */
+.face-title {
+  pointer-events: auto;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.3s ease, transform 0.3s ease, color 0.3s ease;
+  font-size: 1.5rem;
+  color: hsl(var(--foreground));
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.active-face {
+  background: hsl(var(--foreground));
+}
+
+.active-face .face-title {
+  opacity: 1;
+  color: hsl(var(--background));
+  transform: scale(1.05);
+}
+
+/* Effet de halo en mode sombre */
+.dark .active-face {
+  box-shadow: 0 0 30px rgba(255, 255, 255, 0.2);
+}
+
+/* Styles de la grille */
+.grid-overlay {
+  position: fixed;
+  inset: 0;
+  background: hsl(var(--background));
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+  overflow: auto;
+  transition: opacity 0.5s ease;
+}
+
+.grid-overlay.active {
+  display: flex;
+  opacity: 1;
+}
+
+.grid-square {
+  width: var(--cube-size);
+  height: var(--cube-size);
+  border: var(--edge-thickness) solid hsl(var(--border));
+  background: hsl(var(--foreground));
+  transition: all 0.8s ease;
+  transform: scale(0.5);
+}
+
+.grid-square.expanded {
+  width: 60vw;
+  height: 60vw;
+  background: transparent;
+  transform: scale(1);
+}
+
+@media (max-width: 600px) {
+  .grid-square.expanded {
+    width: 90vw;
+    height: 90vw;
+  }
+}
+
+.grid-container {
+  display: grid;
+  width: 100%;
+  height: 100%;
+  gap: 2px;
+  opacity: 0;
+  transition: opacity 0.5s ease;
+  position: relative;
+}
+
+.grid-container.visible {
+  opacity: 1;
+}
+
+/* Styles des items de la grille */
+.grid-item {
+  background: hsl(var(--foreground));
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.grid-item.empty {
+  background: transparent;
+  border: 1px solid hsl(var(--border));
+}
+
+.grid-item.square::before { padding-top: 100%; }
+.grid-item.portrait::before { padding-top: 150%; }
+.grid-item.landscape::before { padding-top: 66.66%; }
+
+.grid-item::before {
+  content: "";
+  display: block;
+}
+
+.grid-item > .content {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.9rem;
+  color: hsl(var(--background));
+} 
