@@ -1,9 +1,11 @@
 "use client"
 
-import { useEffect, useRef, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import { CubeFace } from "./cube-face"
 import { GridOverlay } from "../grid/grid-overlay"
 import { useRouter } from "next/navigation"
+
+type FacePosition = "front" | "back" | "right" | "left" | "top" | "bottom"
 
 const FACES = {
   FRONT: { name: "DESSINS", rotation: { x: 0, y: 0 }, path: "/dessins" },
@@ -12,7 +14,7 @@ const FACES = {
   LEFT: { name: "PHOTOS", rotation: { x: 0, y: 90 }, path: "/photos" },
   TOP: { name: "OBJETS", rotation: { x: -90, y: 0 }, path: "/objets" },
   BOTTOM: { name: "WEB", rotation: { x: 90, y: 0 }, path: "/web" },
-}
+} as const
 
 export function Cube() {
   const router = useRouter()
@@ -26,11 +28,10 @@ export function Cube() {
   const savedRotation = useRef({ x: 0, y: 0 })
 
   // Calcule la face la plus visible
-  const updateFaceVisibility = (rotX: number, rotY: number) => {
+  const updateFaceVisibility = useCallback((rotX: number, rotY: number) => {
     const faces = document.querySelectorAll('.cube-face')
     let maxDot = -Infinity
     let activeFaceName = null
-    let visibilityData = []
 
     const radY = rotY * Math.PI / 180
     const radX = rotX * Math.PI / 180
@@ -46,11 +47,8 @@ export function Cube() {
       if(face.classList.contains('face-bottom')) normal = [0, 1, 0]
 
       // Appliquer une rotation sur Y puis sur X
-      const x1 = normal[0] * Math.cos(radY) + normal[2] * Math.sin(radY)
-      const y1 = normal[1]
       const z1 = -normal[0] * Math.sin(radY) + normal[2] * Math.cos(radY)
-      const x2 = x1
-      const y2 = y1 * Math.cos(radX) - z1 * Math.sin(radX)
+      const y1 = normal[1]
       const z2 = y1 * Math.sin(radX) + z1 * Math.cos(radX)
 
       const dot = z2
@@ -68,7 +66,7 @@ export function Cube() {
     })
 
     setActiveFace(activeFaceName)
-  }
+  }, [])
 
   // Gestionnaires d'événements pour la rotation
   const handleDragStart = (e: React.MouseEvent | React.TouchEvent) => {
@@ -79,7 +77,7 @@ export function Cube() {
     if (cubeRef.current) cubeRef.current.style.cursor = "grabbing"
   }
 
-  const handleDragMove = (e: MouseEvent | TouchEvent) => {
+  const handleDragMove = useCallback((e: MouseEvent | TouchEvent) => {
     if (!isDragging || isGridOpen) return
     const pos = "touches" in e ? e.touches[0] : e
     const deltaX = pos.clientX - startPosition.current.x
@@ -97,14 +95,14 @@ export function Cube() {
     })
 
     startPosition.current = { x: pos.clientX, y: pos.clientY }
-  }
+  }, [isDragging, isGridOpen, updateFaceVisibility])
 
   const handleDragEnd = () => {
     setIsDragging(false)
     if (cubeRef.current) cubeRef.current.style.cursor = "grab"
   }
 
-  const handleWheel = (e: WheelEvent) => {
+  const handleWheel = useCallback((e: WheelEvent) => {
     if (isGridOpen) return
     e.preventDefault()
     setRotation(prev => {
@@ -112,7 +110,7 @@ export function Cube() {
       updateFaceVisibility(prev.x, newY)
       return { ...prev, y: newY }
     })
-  }
+  }, [isGridOpen, updateFaceVisibility])
 
   // Gestion des événements
   useEffect(() => {
@@ -132,15 +130,15 @@ export function Cube() {
       document.removeEventListener("touchmove", handleDragMove)
       document.removeEventListener("touchend", handleDragEnd)
     }
-  }, [isDragging, isGridOpen])
+  }, [handleDragMove, handleWheel])
 
   // Initialisation
   useEffect(() => {
     updateFaceVisibility(rotation.x, rotation.y)
-  }, [])
+  }, [rotation.x, rotation.y, updateFaceVisibility])
 
   const getMinimalRotation = (current: number, target: number) => {
-    let delta = ((target - current + 540) % 360) - 180
+    const delta = ((target - current + 540) % 360) - 180
     return current + delta
   }
 
@@ -193,7 +191,7 @@ export function Cube() {
             <CubeFace
               key={position}
               face={name}
-              position={position.toLowerCase() as any}
+              position={position.toLowerCase() as FacePosition}
               isActive={activeFace === name}
               onClick={() => handleFaceClick(position)}
             />
